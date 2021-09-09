@@ -1,0 +1,49 @@
+version: '3.7'
+
+services:
+  main:
+    build: 
+      context: .
+      target: development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    env_file:
+      - .env
+    ports:
+      - ${SERVICE_PORT}:${SERVICE_PORT}
+      - 9229:9229
+    command: npm run start:dev
+    networks: 
+      - service_net
+    depends_on: 
+      - postgres
+      - opa
+  postgres:
+    image: postgres:10.7
+    ports:
+      - 5432:5432
+    networks:
+      - service_net
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      PG_DATA: /var/lib/postgresql/data
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  opa:
+    image: openpolicyagent/opa:latest
+    ports:
+      - 8181:8181
+    networks:
+      - service_net
+    command:
+      - "run"
+      - "--server"
+      - "--log-format=json-pretty"
+      - "--set=decision_logs.console=true"
+networks: 
+  service_net:
+volumes:
+  pgdata:
